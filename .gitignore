@@ -1,0 +1,11 @@
+# PyCharm project
+.idea
+
+# FAA DOF data files
+*.Dat
+*.DAT
+
+# Temporary data files
+alembic_bulk_insert_data
+
+Pipfile.lock
