@@ -6,6 +6,6 @@
 *.DAT
 
 # Temporary data files
-alembic_bulk_insert_data
+bulk_insert_data
 
 Pipfile.lock
