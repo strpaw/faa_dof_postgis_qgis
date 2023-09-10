@@ -1,17 +1,28 @@
 - [Introduction](#introduction) 
-- [Project structure](#project_structure) 
-  - [Database setup](#database_setup) 
-    - [Dictionary tables (without obstacle types)](#dictionary_tables)
-    - [Obstacle types](#obstacle_types) 
+- [Project structure](#project_structure)
+  - [Database setup](#database_setup)
+     - [Setup with alembic](#setup_alembic)
+     - [Auxiliary scripts](#aux_scripts)
+       - [Dictionary tables (without obstacle types)](#dictionary_tables)
+       - [Obstacle types](#obstacle_types) 
+
+
 
 ## Introduction <a name=introduction>
 
 ## Project structure <a name=project_structure>
+
+Note:
+- All files are not shown for the sake of clarity
+- Skipped files: database alembic version scripts
+
 ```
 │   .gitignore
 │   Pipfile
 │   README.md
 ├───database_setup                                # Scripts, data to setup database
+│   │   .env                                      # Database admin credentials (edit with custom credentials)
+│   │   alembic.ini
 │   ├───data                                      # Data for dictionary tables
 │   │   └───csv                                   # CSV data for dictionary tables (marking, lightng etc.)
 │   │           horizontal_acc.csv
@@ -20,6 +31,11 @@
 │   │           obstacle_type.csv
 │   │           verif_status.csv
 │   │           vertical_acc.csv
+│   ├───db_migrations
+│   │   │   env.py
+│   │   │   README
+│   │   │   script.py.mako
+│   │   └───versions
 │   └───scripts                                   # Auxiliary scripts to prepare data for DDL statements/ alembic bulk_insert operations
 │       │   convert_csv_to_bulkt_insert.py        # Generate content for alembic bulk_insert operations
 │       │   obstacle_types.py                     # Get unique obsctale types from DOF
@@ -28,7 +44,15 @@
 
 ## Database setup <a name=database_setup>
 
-### Dictionary tables (without obstacle types) <a name=dictionary_tables>
+## Setup with alembic <a name setup_alembic>
+
+1. Edit file `<main project dir>\database_setup>.env` (admin credentials to target database)
+2. `cd <main project dir>\database_setup`
+3. Run `alembic upgrade head`
+
+### Auxiliary scripts <a name aux_scripts>
+
+#### Dictionary tables (without obstacle types) <a name=dictionary_tables>
 
 Notes
 - Script `convert_csv_to_bulkt_insert.py` used to generate input into alembic bulk_insert operations
@@ -51,7 +75,7 @@ Example output (part of a file):
     {'code': 2, 'tolerance': 50.0, 'tolerance_uom': 'ft'},
     {'code': 3, 'tolerance': 100.0, 'tolerance_uom': 'ft'},
 
-### Obstacle types <a name=obstacle_types>
+#### Obstacle types <a name=obstacle_types>
 
 Notes
 - Script used to generate input into alembic bulk_insert operations

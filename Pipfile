@@ -5,6 +5,10 @@ name = "pypi"
 
 [packages]
 pandas = "*"
+alembic = "*"
+python-dotenv = "*"
+geoalchemy2 = "*"
+psycopg2 = "*"
 
 [dev-packages]
 pylint = "*"

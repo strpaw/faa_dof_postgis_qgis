@@ -9,3 +9,6 @@
 bulk_insert_data
 
 Pipfile.lock
+
+# Database credentials
+.env_dev
