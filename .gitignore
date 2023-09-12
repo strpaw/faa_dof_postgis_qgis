@@ -12,3 +12,5 @@ Pipfile.lock
 
 # Database credentials
 .env_dev
+
+*.txt

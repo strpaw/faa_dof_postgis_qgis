@@ -9,6 +9,7 @@ alembic = "*"
 python-dotenv = "*"
 geoalchemy2 = "*"
 psycopg2 = "*"
+pyyaml = "*"
 
 [dev-packages]
 pylint = "*"

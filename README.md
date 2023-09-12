@@ -5,6 +5,7 @@
      - [Auxiliary scripts](#aux_scripts)
        - [Dictionary tables (without obstacle types)](#dictionary_tables)
        - [Obstacle types](#obstacle_types) 
+       - [usa_state_oas.py](#usa_state_oas)
 
 
 
@@ -39,6 +40,7 @@ Note:
 │   └───scripts                                   # Auxiliary scripts to prepare data for DDL statements/ alembic bulk_insert operations
 │       │   convert_csv_to_bulkt_insert.py        # Generate content for alembic bulk_insert operations
 │       │   obstacle_types.py                     # Get unique obsctale types from DOF
+│       │   usa_state_oas.py
 │       └───bulk_insert_data                      # Output data from obstacle_types.py,
 ```
 
@@ -110,3 +112,24 @@ Example output (part of output file):
     {"type": "ANTENNA"},
     {"type": "ARCH"},
     {"type": "BALLOON"},
+
+#### usa_state_oas.py <a name=usa_state_oas>
+
+##### Purpose
+Script to generate pairs USA state code (example AK for Alaska) and OAS code ("02").
+
+##### Output
+
+File `usa_state_oas_code.txt` in the directory from which script is executed.
+Example:
+
+    AL: "01"
+    AK: "02"
+    AZ: "04"
+    AR: "05"
+
+##### Usage
+
+1. `cd <main project dir>\database_setup\scripts`
+2. Edit `scripts_config.yml`, section `usa_state_oas`
+3. Run `python usa_state_oas.py`

@@ -1,0 +1,17 @@
+# Config for usa_state_oas.py
+usa_state_oas:
+  # DOF file path, note - file that contains all USA states, countries
+  file_path: DOF.DAT
+  # Number of rows to skip (header lines)
+  skip_rows: 4
+  # Note columns numeration consumed as in Python string slicing: from - inclusive, to - exclusive
+  # Columns from DOF file for OAS code.
+  oas_code:
+    col_from: 0
+    col_to: 2
+  # Columns from DOF file for country code
+  ctry_code:
+    col_from: 15
+    col_to: 17
+  # Input file encoding
+  encoding: "latin-1"
