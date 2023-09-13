@@ -14,3 +14,5 @@ Pipfile.lock
 .env_dev
 
 *.txt
+
+scripts_config_dev.yml

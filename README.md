@@ -5,6 +5,7 @@
      - [Auxiliary scripts](#aux_scripts)
        - [Dictionary tables (without obstacle types)](#dictionary_tables)
        - [Obstacle types](#obstacle_types) 
+       - [load_countries_states.py](#load_ctry_states)
        - [usa_state_oas.py](#usa_state_oas)
 
 
@@ -39,7 +40,9 @@ Note:
 │   │   └───versions
 │   └───scripts                                   # Auxiliary scripts to prepare data for DDL statements/ alembic bulk_insert operations
 │       │   convert_csv_to_bulkt_insert.py        # Generate content for alembic bulk_insert operations
+│       │   load_countries_states.py
 │       │   obstacle_types.py                     # Get unique obsctale types from DOF
+│       │   scripts_config.yml
 │       │   usa_state_oas.py
 │       └───bulk_insert_data                      # Output data from obstacle_types.py,
 ```
@@ -51,6 +54,7 @@ Note:
 1. Edit file `<main project dir>\database_setup>.env` (admin credentials to target database)
 2. `cd <main project dir>\database_setup`
 3. Run `alembic upgrade head`
+4. Load countries, states spatial data. See [load_countries_states.py](#load_ctry_states)
 
 ### Auxiliary scripts <a name aux_scripts>
 
@@ -112,6 +116,19 @@ Example output (part of output file):
     {"type": "ANTENNA"},
     {"type": "ARCH"},
     {"type": "BALLOON"},
+
+#### load_countries_states.py <a name=load_ctry_states>
+
+##### Purpose
+Script to load spatial data (countries, USA states) to database.
+##### Output
+##### Usage
+
+1. `cd <main project dir>\database_setup\scripts`
+2. Edit `scripts_config.yml`, sections: 
+   1. `database`
+   2. `load_countries_states`
+3. Run `python load_countries_states.py`
 
 #### usa_state_oas.py <a name=usa_state_oas>
 

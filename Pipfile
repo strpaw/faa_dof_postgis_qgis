@@ -10,6 +10,7 @@ python-dotenv = "*"
 geoalchemy2 = "*"
 psycopg2 = "*"
 pyyaml = "*"
+geopandas = "*"
 
 [dev-packages]
 pylint = "*"
