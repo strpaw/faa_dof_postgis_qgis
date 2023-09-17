@@ -4,7 +4,7 @@
 - [Database setup](#database_setup)
   - [Setup with alembic](#setup_alembic)
   - [Auxiliary scripts](#aux_scripts)
-    - [convert_csv_to_bulkt_insert.py](#dictionary_tables)
+    - [convert_csv_to_bulk_insert.py](#dictionary_tables)
     - [load_countries_states.py](#load_ctry_states)
     - [obstacle_types.py](#obstacle_types)
     - [usa_state_oas.py](#usa_state_oas)
@@ -46,7 +46,7 @@ faa_dof_postgis_qgis                              # Main project directory
     │   │   script.py.mako
     │   └───versions
     └───scripts                                   # Auxiliary scripts to prepare data for DDL statements/ alembic bulk_insert operations
-        │   convert_csv_to_bulkt_insert.py        # Generate content for alembic bulk_insert operations
+        │   convert_csv_to_bulk_insert.py         # Generate content for alembic bulk_insert operations
         │   load_countries_states.py              # Load spatial data (counries, states) to database
         │   obstacle_types.py                     # Get unique obsctale types from DOF
         │   scripts_config.yml                    # Configuration file for scripts
@@ -76,7 +76,7 @@ Steps:
 
 ### Auxiliary scripts <a name=aux_scripts>
 
-#### convert_csv_to_bulkt_insert.py <a name=dictionary_tables>
+#### convert_csv_to_bulk_insert.py <a name=dictionary_tables>
 
 ##### Purpose
 Generate input into alembic bulk_insert operations
@@ -86,7 +86,7 @@ Notes
 
 #### Usage
 1. `cd <main project dir>\database_setup\scripts`
-2. `python convert_csv_to_bulkt_insert.py`
+2. `python convert_csv_to_bulk_insert.py`
 
 #### Input
 
