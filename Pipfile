@@ -1,0 +1,19 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+pandas = "*"
+alembic = "*"
+python-dotenv = "*"
+geoalchemy2 = "*"
+psycopg2 = "*"
+pyyaml = "*"
+geopandas = "*"
+
+[dev-packages]
+pylint = "*"
+
+[requires]
+python_version = "3.10"

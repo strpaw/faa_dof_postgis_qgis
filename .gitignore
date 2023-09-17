@@ -1,0 +1,18 @@
+# PyCharm project
+.idea
+
+# FAA DOF data files
+*.Dat
+*.DAT
+
+# Temporary data files
+bulk_insert_data
+
+Pipfile.lock
+
+# Database credentials
+.env_dev
+
+*.txt
+
+scripts_config_dev.yml
