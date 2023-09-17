@@ -3,13 +3,12 @@ import geopandas as gpd
 import sqlalchemy
 from yaml import safe_load
 from sqlalchemy import create_engine, text
-# from sqlalchemy.engine import Engine
 
 
 class Configuration:
     """Keep application configuration"""
 
-    def __init__(self, config_path: str = "scripts_config_dev.yml") -> None:
+    def __init__(self, config_path: str = "scripts_config.yml") -> None:
         """
         :param config_path: path to the configuration file
         :type config_path: str
