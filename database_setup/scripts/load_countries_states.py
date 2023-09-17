@@ -1,13 +1,15 @@
 """Script to load countries and USA states spatial data into database"""
 import geopandas as gpd
+import sqlalchemy
 from yaml import safe_load
 from sqlalchemy import create_engine, text
+# from sqlalchemy.engine import Engine
 
 
 class Configuration:
     """Keep application configuration"""
 
-    def __init__(self, config_path: str = "scripts_config.yml") -> None:
+    def __init__(self, config_path: str = "scripts_config_dev.yml") -> None:
         """
         :param config_path: path to the configuration file
         :type config_path: str
@@ -15,17 +17,27 @@ class Configuration:
         with open(config_path, "r", encoding="utf-8") as f:
             content = safe_load(f)
             self.db_credentials = content["database"]["credentials"]
+            """Database credentials"""
 
             country_cfg = content["load_countries_states"]["countries"]
             self.ctry_input_path = country_cfg["input_file"]
+            """Path to the file with countries spatial data"""
             self.country_column = country_cfg["column"]
+            """Column that holds country code"""
             self.country_codes_map = country_cfg["input_dof_map"]
+            """Rules between source data country codes and codes used in DOF data (OAS code)"""
 
             usa_states_cfg = content["load_countries_states"]["usa_states"]
             self.states_input_path = usa_states_cfg["input_file"]
+            """Path to the file with USA states spatial data"""
             self.states_ctry_column = usa_states_cfg["ctry_column"]
+            """Column that holds country code. (
+            Note: Assumption that the input data file covers all countries and their administration division, 
+            example: Natural Earth data"""
             self.state_column = usa_states_cfg["state_column"]
+            """Column that holds state code"""
             self.state_codes_map = usa_states_cfg["input_dof_map"]
+            """Rules between source data states codes and codes used in DOF data (OAS code)"""
 
 
 def get_countries(
@@ -99,15 +111,15 @@ def prepare_data(
 def load_data(
         gdf: gpd.GeoDataFrame,
         target_table: str,
-        engine
+        engine: sqlalchemy.engine.Engine
 ):
     """Load prepared data to database.
     :param gdf: Data to be loaded
     :type gdf: geopandas.GeoDataFrame
     :param target_table: table name to which daa will be loaded
     :type target_table: str
-    :param engine:
-    :type engine:
+    :param engine: SQLAlchemy engine
+    :type engine: sqlalchemy.engine.Engine
     """
     # Some geometries fetched from source data might be a Polygon type, ensure all are MultiPolygons (ST_Multi)
     query_copy = f"""insert into dof.{target_table} (oas_code, boundary)
@@ -132,13 +144,13 @@ def load_data(
 
 def load_countries(
         config: Configuration,
-        engine
+        engine: sqlalchemy.engine.Engine
 ) -> None:
     """Load countries boundaries from shp to database.
     :param config: application configuration
     :type config: Configuration
-    :param engine:
-    :type engine:
+    :param engine: SQLAlchemy engine
+    :type engine: sqlalchemy.engine.Engine
     """
     countries = get_countries(
         input_path=config.ctry_input_path,
@@ -161,13 +173,13 @@ def load_countries(
 
 def load_states(
         config: Configuration,
-        engine
+        engine: sqlalchemy.engine.Engine
 ) -> None:
     """Load USA states boundaries from shp to database.
     :param config: application configuration
     :type config: Configuration
-    :param engine:
-    :type engine:
+    :param engine: SQLAlchemy engine
+    :type engine: sqlalchemy.engine.Engine
     """
     states = get_usa_states(
         input_path=config.states_input_path,
