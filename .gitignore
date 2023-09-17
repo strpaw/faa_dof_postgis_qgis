@@ -1,18 +1,19 @@
 # PyCharm project
 .idea
 
+__pycache__
+
 # FAA DOF data files
 *.Dat
 *.DAT
 
 # Temporary data files
-bulk_insert_data
+/database_setup/scripts/*.txt
+/database_setup/scripts/bulk_insert_data/*.txt
 
 Pipfile.lock
 
 # Database credentials
 .env_dev
-
-*.txt
 
 scripts_config_dev.yml
