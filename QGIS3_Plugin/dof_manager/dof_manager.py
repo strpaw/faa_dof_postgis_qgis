@@ -23,7 +23,8 @@
 """
 from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication
 from qgis.PyQt.QtGui import QIcon
-from qgis.PyQt.QtWidgets import QAction
+from qgis.PyQt.QtWidgets import QAction, QWidget, QMessageBox
+from qgis.core import *
 
 # Initialize Qt resources from file resources.py
 from .resources import *
@@ -66,6 +67,9 @@ class DigitalObstacleFileManager:
         # Check if plugin was started the first time in current QGIS session
         # Must be set in initGui() to survive plugin reloads
         self.first_start = None
+
+        self.layers = {}
+        """Layers required in project"""
 
     # noinspection PyMethodMayBeStatic
     def tr(self, message):
@@ -179,9 +183,69 @@ class DigitalObstacleFileManager:
                 action)
             self.iface.removeToolBarIcon(action)
 
+    def _is_layer_loaded(self, layer_name: str) -> bool:
+        """Check if layer is loaded to QGIS project.
+        :param layer_name: layer name to be checked
+        :type layer_name: str
+        :return: True if only one layer with given name is loaded
+        :rtype: bool
+        """
+        layers = QgsProject.instance().mapLayersByName(layer_name)
+        layers_count = len(layers)
+        if not layers:
+            QMessageBox.critical(QWidget(), "Message", f"'{layer_name}' layer not found!\n"
+                                                       f" Add layer.")
+            return False
+        elif layers_count > 1:
+            QMessageBox.critical(QWidget(), "Message", f"{layers_count} layers  '{layer_name}' found in Layers.\n"
+                                                       f"Only one layer '{layer_name}' is allowed!\n"
+                                                       f"Remove unnecessary layers.")
+            return False
+
+        self.layers[layer_name] = layers[0]
+
+        return True
+
+    def _is_postgis_storage(self, layer_name: str) -> bool:
+        """Check if layer is 'PostgreSQL database with PostGIS extension' storage type.
+        :param layer_name: layer name to be checked
+        :type layer_name: str
+        :return: True if 'PostgreSQL database with PostGIS extension' is storage type for given layer
+        :rtype: bool
+        """
+        expected_storage = "PostgreSQL database with PostGIS extension"
+        provider = self.layers[layer_name].dataProvider()
+        actual_storage = provider.storageType()
+
+        if actual_storage != expected_storage:
+            QMessageBox.critical(QWidget(), "Message", f"Current provider type: {actual_storage} for "
+                                                       f"layer '{layer_name}'.\n"
+                                                       f"Expected provider type: {expected_storage}.\n")
+            return False
+
+        return True
+
+    def _is_layer_correct(self, layer_name):
+        """Check if correct layers is loaded (layer name, storage type)
+        :param layer_name: layer name to be checked
+        :type layer_name: str
+        :return: True if given layer name is loaded and has 'PostgreSQL database with PostGIS extension' storage type
+        :rtype: bool
+        """
+        return self._is_layer_loaded(layer_name) and self._is_postgis_storage(layer_name)
+
+    def _check_loaded_layers(self) -> bool:
+        """Check required layers in current QGIS project.
+        :return: True if required layers and their storage type are correct
+        :rtype: bool
+        """
+        layers = ["country", "obstacle", "us_state"]
+        return all([self._is_layer_correct(layer) for layer in layers])
 
     def run(self):
         """Run method that performs all the real work"""
+        if not self._check_loaded_layers():
+            return
 
         # Create the dialog with elements (after translation) and keep reference
         # Only create GUI ONCE in callback, so that it will only load when the plugin is started
@@ -190,13 +254,8 @@ class DigitalObstacleFileManager:
             self.dlg = DigitalObstacleFileManagerDialog()
 
             self.dlg.pushButtonCancel.clicked.connect(self.dlg.close)
-            
+
         # show the dialog
         self.dlg.show()
         # Run the dialog event loop
-        result = self.dlg.exec_()
-        # See if OK was pressed
-        if result:
-            # Do something useful here - delete the line containing pass and
-            # substitute with your code.
-            pass
+        self.dlg.exec_()
