@@ -189,6 +189,8 @@ class DigitalObstacleFileManager:
             self.first_start = False
             self.dlg = DigitalObstacleFileManagerDialog()
 
+            self.dlg.pushButtonCancel.clicked.connect(self.dlg.close)
+            
         # show the dialog
         self.dlg.show()
         # Run the dialog event loop
