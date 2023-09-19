@@ -31,6 +31,15 @@ from .resources import *
 # Import the code for the dialog
 from .dof_manager_dialog import DigitalObstacleFileManagerDialog
 import os.path
+import logging
+
+from .loging_configuration import configure_logging
+
+
+configure_logging(log_dir=os.path.join(
+    os.path.dirname(os.path.realpath(__file__)),
+    "logs"
+))
 
 
 class DigitalObstacleFileManager:
@@ -193,13 +202,15 @@ class DigitalObstacleFileManager:
         layers = QgsProject.instance().mapLayersByName(layer_name)
         layers_count = len(layers)
         if not layers:
-            QMessageBox.critical(QWidget(), "Message", f"'{layer_name}' layer not found!\n"
-                                                       f" Add layer.")
+            msg = f"'{layer_name}' layer not found!\nAdd layer."
+            QMessageBox.critical(QWidget(), "Message", msg)
+            logging.error(msg.replace("\n", " "))
             return False
         elif layers_count > 1:
-            QMessageBox.critical(QWidget(), "Message", f"{layers_count} layers  '{layer_name}' found in Layers.\n"
-                                                       f"Only one layer '{layer_name}' is allowed!\n"
-                                                       f"Remove unnecessary layers.")
+            msg = f"{layers_count} layers  '{layer_name}' found in Layers.\n"\
+                  f"Only one layer '{layer_name}' is allowed!\nRemove unnecessary layers."
+            QMessageBox.critical(QWidget(), "Message", msg)
+            logging.error(msg.replace("\n", " "))
             return False
 
         self.layers[layer_name] = layers[0]
@@ -218,9 +229,10 @@ class DigitalObstacleFileManager:
         actual_storage = provider.storageType()
 
         if actual_storage != expected_storage:
-            QMessageBox.critical(QWidget(), "Message", f"Current provider type: {actual_storage} for "
-                                                       f"layer '{layer_name}'.\n"
-                                                       f"Expected provider type: {expected_storage}.\n")
+            msg = f"Current provider type: {actual_storage} for layer '{layer_name}'.\n" \
+                  f"Expected provider type: {expected_storage}."
+            QMessageBox.critical(QWidget(), "Message", msg)
+            logging.error(msg.replace("\n", " "))
             return False
 
         return True
@@ -239,8 +251,14 @@ class DigitalObstacleFileManager:
         :return: True if required layers and their storage type are correct
         :rtype: bool
         """
+        logging.info("Checking required layers...")
         layers = ["country", "obstacle", "us_state"]
-        return all([self._is_layer_correct(layer) for layer in layers])
+        result = all([self._is_layer_correct(layer) for layer in layers])
+        if result:
+            logging.info("Check successful.")
+        else:
+            logging.error("Check failed. Load correct layers and run plugin again.")
+        return result
 
     def run(self):
         """Run method that performs all the real work"""
