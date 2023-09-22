@@ -33,6 +33,7 @@ from .dof_manager_dialog import DigitalObstacleFileManagerDialog
 import os.path
 import logging
 
+from .db_utils import DBUtils
 from .loging_configuration import configure_logging
 
 
@@ -79,6 +80,8 @@ class DigitalObstacleFileManager:
 
         self.layers = {}
         """Layers required in project"""
+        self.data_uri = None
+        """Database URI"""
 
     # noinspection PyMethodMayBeStatic
     def tr(self, message):
@@ -260,6 +263,78 @@ class DigitalObstacleFileManager:
             logging.error("Check failed. Load correct layers and run plugin again.")
         return result
 
+    def _get_data_uri(self):
+        obstacle_layer = self.layers["obstacle"]
+        provider = obstacle_layer.dataProvider()
+        logging.info(provider.dataSourceUri())
+        self.data_uri = QgsDataSourceUri(provider.dataSourceUri())
+        logging.info(self.data_uri)
+
+    def _fill_in_country_state(self, db: DBUtils) -> None:
+        """Fill in Country/state combobox with data from database"""
+        fetched_data = db.execute_select("select name, code from dof.states_countries_labels;")
+        for label, data in fetched_data:
+            self.dlg.comboBoxCountryState.addItem(label, data)
+
+    def _fill_in_horizontal_acc(self, db: DBUtils) -> None:
+        """Fill in horizontal accuracy combobox with data from database"""
+        fetched_data = db.execute_select("select * from dof.horizontal_acc_labels;")
+        for label, data in fetched_data:
+            self.dlg.comboBoxHorAcc.addItem(label, data)
+
+    def _fill_in_vertical_acc(self, db: DBUtils) -> None:
+        """Fill in vetical accuracy combobox with data from database"""
+        fetched_data = db.execute_select("select * from dof.vertical_acc_labels;")
+        for label, data in fetched_data:
+            self.dlg.comboBoxVertAcc.addItem(label, data)
+
+    def _fill_in_obstacle_type(self, db: DBUtils) -> None:
+        """Fill in obstacle type combobox with data from database"""
+        fetched_data = db.execute_select("select * from dof.obstacle_type_labels;")
+        for label, data in fetched_data:
+            self.dlg.comboBoxObstacleType.addItem(label, data)
+
+    def _fill_in_marking(self, db: DBUtils) -> None:
+        """Fill in marking combobox with data from database"""
+        fetched_data = db.execute_select("select * from dof.marking_labels;")
+        for label, data in fetched_data:
+            self.dlg.comboBoxMarking.addItem(label, data)
+
+    def _fill_in_lighting(self, db: DBUtils) -> None:
+        """Fill in lighting combobox with data from database"""
+        fetched_data = db.execute_select("select * from dof.lighting_labels;")
+        for label, data in fetched_data:
+            self.dlg.comboBoxLighting.addItem(label, data)
+
+    def _fill_in_verif_status(self, db: DBUtils) -> None:
+        """Fill in verification status combobox with data from database"""
+        fetched_data = db.execute_select("select * from dof.verif_status_labels;")
+        for label, data in fetched_data:
+            self.dlg.comboBoxVerificationStatus.addItem(label, data)
+
+    def _fill_in_action(self, db: DBUtils):
+        """Fill in action combobox with data from database"""
+        fetched_data = db.execute_select("select * from dof.action_labels;")
+        for label, data in fetched_data:
+            self.dlg.comboBoxAction.addItem(label, data)
+
+    def _fill_in_comboboxes(self) -> None:
+        """Fill in comboboxes such as obstacle type, marking with values from database"""
+        db = DBUtils(self.data_uri.host(), self.data_uri.database(), self.data_uri.username(), self.data_uri.password())
+        self._fill_in_country_state(db)
+        self._fill_in_horizontal_acc(db)
+        self._fill_in_vertical_acc(db)
+        self._fill_in_obstacle_type(db)
+        self._fill_in_marking(db)
+        self._fill_in_lighting(db)
+        self._fill_in_verif_status(db)
+        self._fill_in_action(db)
+
+    def _initialize(self) -> None:
+        """Initialize plugin GUI settings"""
+        self._get_data_uri()
+        self._fill_in_comboboxes()
+
     def run(self):
         """Run method that performs all the real work"""
         if not self._check_loaded_layers():
@@ -271,6 +346,7 @@ class DigitalObstacleFileManager:
             self.first_start = False
             self.dlg = DigitalObstacleFileManagerDialog()
 
+            self._initialize()
             self.dlg.pushButtonCancel.clicked.connect(self.dlg.close)
 
         # show the dialog
