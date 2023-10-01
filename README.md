@@ -33,6 +33,7 @@ faa_dof_postgis_qgis                              # Main project directory
     │   alembic.ini
     ├───data                                      # Data for dictionary tables
     │   └───csv                                   # CSV data for dictionary tables (marking, lightng etc.)
+    |           action.csv
     │           horizontal_acc.csv
     │           lighting.csv
     │           marking.csv

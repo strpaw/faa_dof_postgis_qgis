@@ -94,6 +94,13 @@ def upgrade() -> None:
         schema=schema
     )
 
+    action = op.create_table(
+        'action',
+        sa.Column('code', sa.CHAR(1), primary_key=True),
+        sa.Column('action', sa.VARCHAR(30), nullable=False),
+        schema=schema
+    )
+
     op.create_table(
         'obstacle',
         sa.Column('oas_code', sa.CHAR(2), nullable=False),
@@ -109,7 +116,7 @@ def upgrade() -> None:
         sa.Column('vert_acc_code', sa.CHAR(1), nullable=False),
         sa.Column('marking_code', sa.CHAR(1), nullable=False),
         sa.Column('faa_study_number', sa.CHAR(14), nullable=True),
-        sa.Column('action', sa.CHAR(1), nullable=False),
+        sa.Column('action_code', sa.CHAR(1), nullable=False),
         sa.Column('julian_date', sa.CHAR(7), nullable=True),
         sa.Column('valid_from', sa.Date, nullable=False),
         sa.Column('valid_to', sa.Date, nullable=True),
@@ -140,6 +147,9 @@ def upgrade() -> None:
         ),
         sa.ForeignKeyConstraint(
             ['marking_code'], [f'{schema}.marking.code']
+        ),
+        sa.ForeignKeyConstraint(
+            ['action_code'], [f'{schema}.action.code']
         ),
         schema=schema
     )
@@ -359,6 +369,14 @@ def upgrade() -> None:
             {'code': 'S', 'description': 'Spherical Marker'},
             {'code': 'N', 'description': 'None'},
             {'code': 'U', 'description': 'Unknown'}
+        ]
+    )
+
+    op.bulk_insert(
+        action,
+        [
+            {'code': 'A', 'action': 'Add'},
+            {'code': 'C', 'action': 'Change'}
         ]
     )
 
