@@ -22,8 +22,8 @@
  ***************************************************************************/
 """
 from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication
-from qgis.PyQt.QtGui import QIcon
-from qgis.PyQt.QtWidgets import QAction, QWidget, QMessageBox
+from qgis.PyQt.QtGui import QIcon, QValidator, QDoubleValidator, QIntValidator
+from qgis.PyQt.QtWidgets import QAction, QWidget, QMessageBox, QLineEdit
 from qgis.core import *
 
 # Initialize Qt resources from file resources.py
@@ -330,10 +330,79 @@ class DigitalObstacleFileManager:
         self._fill_in_verif_status(db)
         self._fill_in_action(db)
 
+    def _set_validators(self) -> None:
+        """Set validators for line edits when they are required"""
+        self.dlg.lineEditAgl.setValidator(
+            QDoubleValidator(
+                bottom=0,
+                top=9000,
+                decimals=2,
+                notation=QDoubleValidator.StandardNotation
+            )
+        )
+
+        self.dlg.lineEditAmsl.setValidator(
+            QDoubleValidator(
+                bottom=0,
+                top=30000,
+                decimals=2,
+                notation=QDoubleValidator.StandardNotation
+            )
+        )
+
+        self.dlg.lineEditQuantity.setValidator(
+            QIntValidator(
+                bottom=1,
+                top=200
+            )
+        )
+
     def _initialize(self) -> None:
         """Initialize plugin GUI settings"""
         self._get_data_uri()
         self._fill_in_comboboxes()
+        self._set_validators()
+
+    @staticmethod
+    def __double_validation(item: QLineEdit) -> None:
+        """ Validate LineEdit with allowed double values.
+        Set background to red in case value is invalid (outside range), white otherwise/
+        :param item: item for which validation is executed
+        :type item: QLineEdit
+        """
+        validator = item.validator()
+        state = validator.validate(item.text(), 0)[0]
+
+        if state == QValidator.Intermediate:
+            text = item.text()
+            if text and float(text.replace(",", ".")) > validator.top():
+                item.setStyleSheet("background: red;")
+            else:
+                item.setStyleSheet("background: white;")
+        elif state == QValidator.Acceptable:
+            item.setStyleSheet("background: white;")
+
+    def agl_edited(self):
+        """Check if value entered by user is valid"""
+        self.__double_validation(self.dlg.lineEditAgl)
+
+    def amsl_edited(self):
+        """Check if value entered by user is valid"""
+        self.__double_validation(self.dlg.lineEditAmsl)
+
+    def quantity_edited(self):
+        """Check if value entered by user is valid"""
+        validator = self.dlg.lineEditQuantity.validator()
+        state = validator.validate(self.dlg.lineEditQuantity.text(), 0)[0]
+
+        if state == QValidator.Intermediate:
+            text = self.dlg.lineEditQuantity.text()
+            if text and int(text) > validator.top():
+                self.dlg.lineEditQuantity.setStyleSheet("background: red;")
+            else:
+                self.dlg.lineEditQuantity.setStyleSheet("background: white;")
+        elif state == QValidator.Acceptable:
+            self.dlg.lineEditQuantity.setStyleSheet("background: white;")
 
     def run(self):
         """Run method that performs all the real work"""
@@ -348,6 +417,9 @@ class DigitalObstacleFileManager:
 
             self._initialize()
             self.dlg.pushButtonCancel.clicked.connect(self.dlg.close)
+            self.dlg.lineEditAgl.textChanged.connect(self.agl_edited)
+            self.dlg.lineEditAmsl.textChanged.connect(self.amsl_edited)
+            self.dlg.lineEditQuantity.textChanged.connect(self.quantity_edited)
 
         # show the dialog
         self.dlg.show()
