@@ -21,7 +21,7 @@
  *                                                                         *
  ***************************************************************************/
 """
-from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication
+from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication, QDate
 from qgis.PyQt.QtGui import QIcon, QValidator, QDoubleValidator, QIntValidator
 from qgis.PyQt.QtWidgets import QAction, QWidget, QMessageBox, QLineEdit
 from qgis.core import *
@@ -357,11 +357,18 @@ class DigitalObstacleFileManager:
             )
         )
 
+    def _set_initial_dates(self) -> None:
+        """Set valid from, valid to dates to initial values"""
+        current_date = QDate.currentDate()
+        self.dlg.dateEditValidFrom.setDate(current_date)
+        self.dlg.dateEditValidTo.setDate(current_date.addDays(1))
+
     def _initialize(self) -> None:
         """Initialize plugin GUI settings"""
         self._get_data_uri()
         self._fill_in_comboboxes()
         self._set_validators()
+        self._set_initial_dates()
 
     @staticmethod
     def __double_validation(item: QLineEdit) -> None:
