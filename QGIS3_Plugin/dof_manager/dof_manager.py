@@ -23,7 +23,7 @@
 """
 from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication, QDate
 from qgis.PyQt.QtGui import QIcon, QValidator, QDoubleValidator, QIntValidator
-from qgis.PyQt.QtWidgets import QAction, QWidget, QMessageBox, QLineEdit
+from qgis.PyQt.QtWidgets import QAction, QWidget, QMessageBox, QLineEdit, QMessageBox
 from qgis.core import *
 
 # Initialize Qt resources from file resources.py
@@ -362,6 +362,7 @@ class DigitalObstacleFileManager:
         current_date = QDate.currentDate()
         self.dlg.dateEditValidFrom.setDate(current_date)
         self.dlg.dateEditValidTo.setDate(current_date.addDays(1))
+        self._valid_to = self.dlg.dateEditValidTo.date()
 
     def _initialize(self) -> None:
         """Initialize plugin GUI settings"""
@@ -411,6 +412,28 @@ class DigitalObstacleFileManager:
         elif state == QValidator.Acceptable:
             self.dlg.lineEditQuantity.setStyleSheet("background: white;")
 
+    def _change_dates_background_color(self) -> None:
+        """Set Valid from, Valid to background color to red or white depending on if
+        condition is met: valid from <= valid to."""
+        if self.dlg.dateEditValidFrom.date() > self.dlg.dateEditValidTo.date():
+            self.dlg.dateEditValidFrom.setStyleSheet("background: red;")
+            self.dlg.dateEditValidTo.setStyleSheet("background: red;")
+        else:
+            self.dlg.dateEditValidFrom.setStyleSheet("background: white;")
+            self.dlg.dateEditValidTo.setStyleSheet("background: white;")
+
+    def check_valid_from_date(self) -> None:
+        """Ensure that valid from date is equal of before valid to date"""
+        if self.dlg.dateEditValidFrom.date() > self.dlg.dateEditValidTo.date():
+            QMessageBox.critical(QWidget(), "Message", "Valid from date after Valid to date!")
+        self._change_dates_background_color()
+
+    def check_valid_to_date(self) -> None:
+        """Ensure that valid to date is equal or after valid from date"""
+        if self.dlg.dateEditValidTo.date() < self.dlg.dateEditValidFrom.date():
+            QMessageBox.critical(QWidget(), "Message", "Valid to date before Valid from date!")
+        self._change_dates_background_color()
+
     def run(self):
         """Run method that performs all the real work"""
         if not self._check_loaded_layers():
@@ -427,6 +450,8 @@ class DigitalObstacleFileManager:
             self.dlg.lineEditAgl.textChanged.connect(self.agl_edited)
             self.dlg.lineEditAmsl.textChanged.connect(self.amsl_edited)
             self.dlg.lineEditQuantity.textChanged.connect(self.quantity_edited)
+            self.dlg.dateEditValidFrom.dateChanged.connect(self.check_valid_from_date)
+            self.dlg.dateEditValidTo.dateChanged.connect(self.check_valid_to_date)
 
         # show the dialog
         self.dlg.show()
