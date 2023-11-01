@@ -38,6 +38,7 @@ from .loging_configuration import configure_logging
 
 
 LENGTH_OBSTACLE_IDENT = 6
+LENGTH_STUDY_NUMBER = 14
 
 configure_logging(log_dir=os.path.join(
     os.path.dirname(os.path.realpath(__file__)),
@@ -361,6 +362,10 @@ class DigitalObstacleFileManager:
                 bottom=1,
                 top=200
             )
+        )
+
+        self.dlg.lineEditFAAStudyNumber.setValidator(
+            QRegExpValidator(QRegExp("\d{4}[A-Z]{3}\d{6}[A-Z]"))
         )
 
     def _set_initial_dates(self) -> None:
