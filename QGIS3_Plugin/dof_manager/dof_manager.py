@@ -21,8 +21,8 @@
  *                                                                         *
  ***************************************************************************/
 """
-from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication, QDate
-from qgis.PyQt.QtGui import QIcon, QValidator, QDoubleValidator, QIntValidator
+from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication, QDate, QRegExp
+from qgis.PyQt.QtGui import QIcon, QValidator, QDoubleValidator, QIntValidator, QRegExpValidator
 from qgis.PyQt.QtWidgets import QAction, QWidget, QMessageBox, QLineEdit, QMessageBox
 from qgis.core import *
 
@@ -36,6 +36,8 @@ import logging
 from .db_utils import DBUtils
 from .loging_configuration import configure_logging
 
+
+LENGTH_OBSTACLE_IDENT = 6
 
 configure_logging(log_dir=os.path.join(
     os.path.dirname(os.path.realpath(__file__)),
@@ -332,6 +334,10 @@ class DigitalObstacleFileManager:
 
     def _set_validators(self) -> None:
         """Set validators for line edits when they are required"""
+        self.dlg.lineEditObstacleIdent.setValidator(
+            QRegExpValidator(QRegExp("\d+"))
+        )
+
         self.dlg.lineEditAgl.setValidator(
             QDoubleValidator(
                 bottom=0,
@@ -370,6 +376,29 @@ class DigitalObstacleFileManager:
         self._fill_in_comboboxes()
         self._set_validators()
         self._set_initial_dates()
+
+    def _is_obstacle_ident_correct_length(self) -> bool:
+        """Check if obstacle ident with required length has been entered"""
+        if len(self.dlg.lineEditObstacleIdent.text()) < LENGTH_OBSTACLE_IDENT:
+            return False
+        return True
+
+    def _change_obstacle_ident_background(self) -> None:
+        """Change obstacle ident background to white while editing in case it was red.
+        Purpose - to not confuse user (until editing is finished we do not know if obstacle ident length is
+        correct or not)"""
+        self.dlg.lineEditObstacleIdent.setStyleSheet("background: white;")
+
+    def obstacle_ident_editing_finished(self) -> None:
+        """Actions to be done when obstacle ident editing is finished"""
+        is_correct_length = self._is_obstacle_ident_correct_length()
+
+        if not is_correct_length:
+            QMessageBox.critical(QWidget(), "Message", "Obstacle ident requires 6 digits!")
+            self.dlg.lineEditObstacleIdent.setStyleSheet("background: red;")
+            return
+
+        self.dlg.lineEditObstacleIdent.setStyleSheet("background: white;")
 
     @staticmethod
     def __double_validation(item: QLineEdit) -> None:
@@ -447,6 +476,8 @@ class DigitalObstacleFileManager:
 
             self._initialize()
             self.dlg.pushButtonCancel.clicked.connect(self.dlg.close)
+            self.dlg.lineEditObstacleIdent.editingFinished.connect(self.obstacle_ident_editing_finished)
+            self.dlg.lineEditObstacleIdent.textChanged.connect(self._change_obstacle_ident_background)
             self.dlg.lineEditAgl.textChanged.connect(self.agl_edited)
             self.dlg.lineEditAmsl.textChanged.connect(self.amsl_edited)
             self.dlg.lineEditQuantity.textChanged.connect(self.quantity_edited)
