@@ -3,10 +3,15 @@ import logging
 from typing import List, Tuple
 
 import psycopg2
+from psycopg2.extras import DictCursor, DictRow
 
 
 class DBConnectionError(Exception):
     """Raised when cannot connect to database"""
+
+
+class DataNotFoundError(Exception):
+    """Raised when data is not found (query returns empty result)"""
 
 
 class DBUtils:
@@ -40,6 +45,21 @@ class DBUtils:
         """
         connection = self.get_database_connection()
         cur = connection.cursor()
+        cur.execute(query)
+        fetched_data = cur.fetchall()
+        cur.close()
+        connection.commit()
+        return fetched_data
+
+    def execute_select_to_list_dictrows(self, query: str) -> List[DictRow]:
+        """Return result from SQL select statements as list of DictRows so can access values by column name.
+        :param query: SQL select query to execute
+        :type query: str
+        :return: Data
+        :rtype: list[psycopg2.extras.DictRow]
+        """
+        connection = self.get_database_connection()
+        cur = connection.cursor(cursor_factory=DictCursor)
         cur.execute(query)
         fetched_data = cur.fetchall()
         cur.close()
