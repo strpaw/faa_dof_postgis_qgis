@@ -33,7 +33,7 @@ from .dof_manager_dialog import DigitalObstacleFileManagerDialog
 import os.path
 import logging
 
-from .db_utils import DBUtils
+from .db_utils import DBUtils, DataNotFoundError
 from .loging_configuration import configure_logging
 
 
@@ -388,11 +388,70 @@ class DigitalObstacleFileManager:
             return False
         return True
 
-    def _change_obstacle_ident_background(self) -> None:
-        """Change obstacle ident background to white while editing in case it was red.
+    def _obstacle_ident_editing(self) -> None:
+        """Action when obstacle ident is editing (but not finished - not lost focus).
         Purpose - to not confuse user (until editing is finished we do not know if obstacle ident length is
         correct or not)"""
         self.dlg.lineEditObstacleIdent.setStyleSheet("background: white;")
+        self._turn_on_insert_mode()
+
+    def _get_obstacle_data(self, oas_code: str, obst_number: str):
+        """Return obstacle data for given oas_code and obst_number.
+        Raise DataNotFoundError where obstacle not found."""
+        query = f"""select
+                        oas_code,
+                        obst_number,
+                        verif_status_code,
+                        city,
+                        type_id,
+                        quantity,
+                        agl,
+                        amsl,
+                        lighting_code,
+                        hor_acc_code,
+                        vert_acc_code,
+                        marking_code,
+                        faa_study_number,
+                        action_code,
+                        julian_date,
+                        valid_from,
+                        valid_to,
+                        split_part(ST_AsLatLonText(location::geometry), ' ', 1) as lat_dmsh,
+                        split_part(ST_AsLatLonText(location::geometry), ' ', 2) as long_dmsh
+                    from dof.obstacle
+                    where 
+                        oas_code = '{oas_code}' 
+                        and obst_number = '{obst_number}';"""
+        db = DBUtils(self.data_uri.host(), self.data_uri.database(), self.data_uri.username(), self.data_uri.password())
+        data = db.execute_select_to_list_dictrows(query)
+        if data:
+            # Note: oas_code, obst_numer are primary key so in case data is found there will be always only one row
+            return data[0]
+
+        raise DataNotFoundError
+
+    def _turn_on_insert_mode(self) -> None:
+        """Switch mode from update obstacle into insert obstacle"""
+        self.dlg.pushButtonUpdate.setEnabled(False)
+        self.dlg.pushButtonInsert.setEnabled(True)
+
+    def _turn_on_update_mode(self) -> None:
+        """Switch mode from insert obstacle into update obstacle"""
+        self.dlg.pushButtonUpdate.setEnabled(True)
+        self.dlg.pushButtonInsert.setEnabled(False)
+
+    def _handle_existing_obstacle(self) -> None:
+        """Behaviour in case entered obstacle ident (number) and selected country/state is already in database -
+        update mode instead of insert mode."""
+        try:
+            obst_data = self._get_obstacle_data(
+                oas_code=self.dlg.comboBoxCountryState.currentData(),
+                obst_number=self.dlg.lineEditObstacleIdent.text()
+            )
+        except DataNotFoundError:
+            self._turn_on_insert_mode()
+        else:
+            self._turn_on_update_mode()
 
     def obstacle_ident_editing_finished(self) -> None:
         """Actions to be done when obstacle ident editing is finished"""
@@ -404,6 +463,7 @@ class DigitalObstacleFileManager:
             return
 
         self.dlg.lineEditObstacleIdent.setStyleSheet("background: white;")
+        self._handle_existing_obstacle()
 
     @staticmethod
     def __double_validation(item: QLineEdit) -> None:
@@ -482,7 +542,8 @@ class DigitalObstacleFileManager:
             self._initialize()
             self.dlg.pushButtonCancel.clicked.connect(self.dlg.close)
             self.dlg.lineEditObstacleIdent.editingFinished.connect(self.obstacle_ident_editing_finished)
-            self.dlg.lineEditObstacleIdent.textChanged.connect(self._change_obstacle_ident_background)
+            self.dlg.lineEditObstacleIdent.textChanged.connect(self._obstacle_ident_editing)
+            self.dlg.comboBoxCountryState.currentIndexChanged.connect(self._handle_existing_obstacle)
             self.dlg.lineEditAgl.textChanged.connect(self.agl_edited)
             self.dlg.lineEditAmsl.textChanged.connect(self.amsl_edited)
             self.dlg.lineEditQuantity.textChanged.connect(self.quantity_edited)
