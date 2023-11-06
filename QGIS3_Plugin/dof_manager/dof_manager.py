@@ -430,6 +430,64 @@ class DigitalObstacleFileManager:
 
         raise DataNotFoundError
 
+    @staticmethod
+    def _convert_fetched_data(obst_data) -> dict:
+        """Convert raw data as fetched from database into format that can be displayed in QLineEdit widgets,
+        example convert int, float into str.
+        :param obst_data: obstacle data as fetched from database
+        :type obst_data: psycopg2.extras.DictRow
+        :return: converted data
+        :rtype: dict
+        """
+        d = obst_data.copy()
+        for col, value in d.items():
+            if isinstance(value, (int, float)):
+                d[col] = str(value)
+            if value is None:
+                if col == "valid_to":
+                    # Special case: null value in valid_to display as 2099-12-31
+                    d[col] = QDate(2099, 12, 31)
+                else:
+                    d[col] = ""
+
+        return d
+
+    def _populate_form(self, obst_data: dict) -> None:
+        """ Populate single obstacle form with value for specified (found) obstacle.
+        :param obst_data: 'prepared' (int, float converted to str, etc.) obstacle data
+        :type obst_data: dict
+        """
+        self.dlg.lineEditCity.setText(obst_data["city"])
+        self.dlg.lineEditLongitude.setText(obst_data["long_dmsh"])
+        self.dlg.lineEditLatitude.setText(obst_data["lat_dmsh"])
+        self.dlg.comboBoxHorAcc.setCurrentIndex(
+            self.dlg.comboBoxHorAcc.findData(obst_data["hor_acc_code"])
+        )
+        self.dlg.lineEditAgl.setText(str(obst_data["agl"]))
+        self.dlg.lineEditAmsl.setText(str(obst_data["amsl"]))
+        self.dlg.comboBoxVertAcc.setCurrentIndex(
+            self.dlg.comboBoxVertAcc.findData(obst_data["vert_acc_code"])
+        )
+        self.dlg.comboBoxObstacleType.setCurrentIndex(
+            self.dlg.comboBoxObstacleType.findData(obst_data["type_id"])
+        )
+        self.dlg.comboBoxMarking.setCurrentIndex(
+            self.dlg.comboBoxMarking.findData(obst_data["marking_code"])
+        )
+        self.dlg.comboBoxLighting.setCurrentIndex(
+            self.dlg.comboBoxLighting.findData(obst_data["lighting_code"])
+        )
+        self.dlg.comboBoxVerificationStatus.setCurrentIndex(
+            self.dlg.comboBoxVerificationStatus.findData(obst_data["verif_status_code"])
+        )
+        self.dlg.lineEditQuantity.setText(obst_data["quantity"])
+        self.dlg.lineEditFAAStudyNumber.setText(obst_data["faa_study_number"])
+        self.dlg.comboBoxAction.setCurrentIndex(
+            self.dlg.comboBoxAction.findData(obst_data["action_code"])
+        )
+        self.dlg.dateEditValidFrom.setDate(obst_data["valid_from"])
+        self.dlg.dateEditValidTo.setDate(obst_data["valid_to"])
+
     def _turn_on_insert_mode(self) -> None:
         """Switch mode from update obstacle into insert obstacle"""
         self.dlg.pushButtonUpdate.setEnabled(False)
@@ -452,6 +510,7 @@ class DigitalObstacleFileManager:
             self._turn_on_insert_mode()
         else:
             self._turn_on_update_mode()
+            self._populate_form(self._convert_fetched_data(obst_data))
 
     def obstacle_ident_editing_finished(self) -> None:
         """Actions to be done when obstacle ident editing is finished"""
