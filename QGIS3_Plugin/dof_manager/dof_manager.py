@@ -339,6 +339,10 @@ class DigitalObstacleFileManager:
             QRegExpValidator(QRegExp("\d+"))
         )
 
+        self.dlg.lineEditCity.setValidator(
+            QRegExpValidator(QRegExp(".{0,20}"))
+        )
+
         self.dlg.lineEditAgl.setValidator(
             QDoubleValidator(
                 bottom=0,
