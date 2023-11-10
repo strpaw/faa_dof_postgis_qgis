@@ -21,7 +21,7 @@
  *                                                                         *
  ***************************************************************************/
 """
-from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication, QDate, QRegExp
+from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication, QDate, QRegExp, Qt
 from qgis.PyQt.QtGui import QIcon, QValidator, QDoubleValidator, QIntValidator, QRegExpValidator
 from qgis.PyQt.QtWidgets import QAction, QWidget, QMessageBox, QLineEdit, QMessageBox
 from qgis.core import *
@@ -590,6 +590,30 @@ class DigitalObstacleFileManager:
         if self.dlg.dateEditValidTo.date() < self.dlg.dateEditValidFrom.date():
             QMessageBox.critical(QWidget(), "Message", "Valid to date before Valid from date!")
         self._change_dates_background_color()
+
+    def get_single_obstacle_data(self) -> dict:
+        """Read user input in plugin for single obstacle.
+        :return: user input
+        :rtype: dict
+        """
+        data = dict()
+        data["oas_code"] = self.dlg.comboBoxCountryState.currentData()
+        data["obst_number"] = self.dlg.lineEditObstacleIdent.text()
+        data["verif_status_code"] = self.dlg.comboBoxVerificationStatus.currentData()
+        data["city"] = self.dlg.lineEditCity.text()
+        data["type_id"] = self.dlg.comboBoxObstacleType.currentData()
+        data["quantity"] = self.dlg.lineEditQuantity.text()
+        data["agl"] = self.dlg.lineEditAgl.text()
+        data["amsl"] = self.dlg.lineEditAmsl.text()
+        data["lighting_code"] = self.dlg.comboBoxLighting.currentData()
+        data["hor_acc_code"] = self.dlg.comboBoxHorAcc.currentData()
+        data["vert_acc_code"] = self.dlg.comboBoxVertAcc.currentData()
+        data["marking_code"] = self.dlg.comboBoxMarking.currentData()
+        data["faa_study_number"] = self.dlg.lineEditFAAStudyNumber.text()
+        data["action_code"] = self.dlg.comboBoxAction.currentData()
+        data["valid_from"] = self.dlg.dateEditValidFrom.date().toString(Qt.ISODate)
+        data["valid_to"] = self.dlg.dateEditValidTo.date().toString(Qt.ISODate)
+        return data
 
     def run(self):
         """Run method that performs all the real work"""
