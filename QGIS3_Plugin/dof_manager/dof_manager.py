@@ -21,6 +21,8 @@
  *                                                                         *
  ***************************************************************************/
 """
+from collections import OrderedDict
+
 from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication, QDate, QRegExp, Qt
 from qgis.PyQt.QtGui import QIcon, QValidator, QDoubleValidator, QIntValidator, QRegExpValidator
 from qgis.PyQt.QtWidgets import QAction, QWidget, QMessageBox, QLineEdit, QMessageBox
@@ -85,6 +87,19 @@ class DigitalObstacleFileManager:
         """Layers required in project"""
         self.data_uri = None
         """Database URI"""
+        self.single_obstacle_input_errors = OrderedDict([
+            ("obstacle_ident", ""),
+            ("lon", ""),
+            ("lat", ""),
+            ("agl", ""),
+            ("amsl", ""),
+            ("faa_study_number", ""),
+            ("valid_dates", ""),
+            ("longitude", ""),
+            ("latitude", "")
+        ]
+        )
+
 
     # noinspection PyMethodMayBeStatic
     def tr(self, message):
@@ -335,6 +350,7 @@ class DigitalObstacleFileManager:
 
     def _set_validators(self) -> None:
         """Set validators for line edits when they are required"""
+        # Note: Validators for longitude, latitude after coordinates conversion added
         self.dlg.lineEditObstacleIdent.setValidator(
             QRegExpValidator(QRegExp("\d+"))
         )
@@ -521,19 +537,24 @@ class DigitalObstacleFileManager:
         is_correct_length = self._is_obstacle_ident_correct_length()
 
         if not is_correct_length:
-            QMessageBox.critical(QWidget(), "Message", "Obstacle ident requires 6 digits!")
+            msg = "Obstacle ident requires 6 digits!"
+            self.single_obstacle_input_errors["obstacle_ident"] = msg
+            QMessageBox.critical(QWidget(), "Message", msg)
             self.dlg.lineEditObstacleIdent.setStyleSheet("background: red;")
             return
 
         self.dlg.lineEditObstacleIdent.setStyleSheet("background: white;")
+        self.single_obstacle_input_errors["obstacle_ident"] = ""
         self._handle_existing_obstacle()
 
     @staticmethod
-    def __double_validation(item: QLineEdit) -> None:
+    def __double_validation(item: QLineEdit) -> bool:
         """ Validate LineEdit with allowed double values.
         Set background to red in case value is invalid (outside range), white otherwise/
         :param item: item for which validation is executed
         :type item: QLineEdit
+        :rtype: bool
+        :return True if entered value is withing range, False otherwise
         """
         validator = item.validator()
         state = validator.validate(item.text(), 0)[0]
@@ -542,18 +563,31 @@ class DigitalObstacleFileManager:
             text = item.text()
             if text and float(text.replace(",", ".")) > validator.top():
                 item.setStyleSheet("background: red;")
+                return False
             else:
                 item.setStyleSheet("background: white;")
+                return True
         elif state == QValidator.Acceptable:
             item.setStyleSheet("background: white;")
+            return True
 
     def agl_edited(self):
         """Check if value entered by user is valid"""
-        self.__double_validation(self.dlg.lineEditAgl)
+        if self.__double_validation(self.dlg.lineEditAgl):
+            self.single_obstacle_input_errors["agl"] = ""
+        else:
+            msg = "AGL outside range (0, 9000>"
+            self.single_obstacle_input_errors["agl"] = msg
+            QMessageBox.critical(QWidget(), "Message", msg)
 
     def amsl_edited(self):
         """Check if value entered by user is valid"""
-        self.__double_validation(self.dlg.lineEditAmsl)
+        if self.__double_validation(self.dlg.lineEditAmsl):
+            self.single_obstacle_input_errors["amsl"] = ""
+        else:
+            msg = "AMSL outside range <0, 30000>"
+            self.single_obstacle_input_errors["amsl"] = msg
+            QMessageBox.critical(QWidget(), "Message", msg)
 
     def quantity_edited(self):
         """Check if value entered by user is valid"""
@@ -582,13 +616,23 @@ class DigitalObstacleFileManager:
     def check_valid_from_date(self) -> None:
         """Ensure that valid from date is equal of before valid to date"""
         if self.dlg.dateEditValidFrom.date() > self.dlg.dateEditValidTo.date():
-            QMessageBox.critical(QWidget(), "Message", "Valid from date after Valid to date!")
+            msg = "Valid from date after Valid to date!"
+            self.single_obstacle_input_errors["valid_dates"] = msg
+            QMessageBox.critical(QWidget(), "Message", msg)
+        else:
+            self.single_obstacle_input_errors["valid_dates"] = ""
+
         self._change_dates_background_color()
 
     def check_valid_to_date(self) -> None:
         """Ensure that valid to date is equal or after valid from date"""
         if self.dlg.dateEditValidTo.date() < self.dlg.dateEditValidFrom.date():
-            QMessageBox.critical(QWidget(), "Message", "Valid to date before Valid from date!")
+            msg = "Valid from date after Valid to date!"
+            self.single_obstacle_input_errors["valid_dates"] = msg
+            QMessageBox.critical(QWidget(), "Message", msg)
+        else:
+            self.single_obstacle_input_errors["valid_dates"] = ""
+
         self._change_dates_background_color()
 
     def get_single_obstacle_data(self) -> dict:
@@ -613,7 +657,36 @@ class DigitalObstacleFileManager:
         data["action_code"] = self.dlg.comboBoxAction.currentData()
         data["valid_from"] = self.dlg.dateEditValidFrom.date().toString(Qt.ISODate)
         data["valid_to"] = self.dlg.dateEditValidTo.date().toString(Qt.ISODate)
+        data["longitude"] = self.dlg.lineEditLongitude.text()
+        data["latitude"] = self.dlg.lineEditLatitude.text()
         return data
+
+    def check_required_fields(self, obst_data: dict) -> None:
+        """Check if required fields are not empty.
+        :param obst_data: Data entered into dialog plugin form
+        :type obst_data: dict
+        """
+        req_fields = ["obst_number", "agl", "longitude", "latitude"]
+        for field, value in obst_data.items():
+            if field in req_fields:
+                if not value:
+                    self.single_obstacle_input_errors[field] = f"{field} required!"
+
+    def check_input(self):
+        """Check user input for single obstacle"""
+        data = self.get_single_obstacle_data()
+
+        # Note:
+        # Most of the QLineEdit widgets has its own validator that gather error when editing if finished.
+        # In case QLineEdit was not editing - inform user about required fields.
+        self.check_required_fields(data)
+
+        errors = self.single_obstacle_input_errors.values()
+        if not any(errors):
+            return
+
+        error_msg = "\n".join([e for e in errors if e != ""])
+        QMessageBox.critical(QWidget(), "Message", error_msg)
 
     def run(self):
         """Run method that performs all the real work"""
@@ -636,6 +709,7 @@ class DigitalObstacleFileManager:
             self.dlg.lineEditQuantity.textChanged.connect(self.quantity_edited)
             self.dlg.dateEditValidFrom.dateChanged.connect(self.check_valid_from_date)
             self.dlg.dateEditValidTo.dateChanged.connect(self.check_valid_to_date)
+            self.dlg.pushButtonInsert.clicked.connect(self.check_input)
 
         # show the dialog
         self.dlg.show()
